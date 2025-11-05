@@ -131,7 +131,9 @@ def train(args, task_cfg, algo_cfg):
 
             # ======= collect trajectories & training ======= #
             with torch.no_grad():
+                # 注意这里应该执行的是rollout的流程 首先getaction 应该是基于当前actor config中展示的模型进行的一次前向推理 然后保存到buffer中 
                 actions_tensor = agent.getAction(obs_tensor, states_tensor, stages_tensor, False)
+                # 这里是与环境进行交互 调用的是环境相关的定义,调用环境这个也是插件化的方式进行实现的
                 obs_tensor, states_tensor, rewards_tensor, dones, infos = vec_env.step(actions_tensor)
                 stages_tensor = states_tensor[:, -args.num_stages:]
                 states_tensor = states_tensor[:, :-args.num_stages]

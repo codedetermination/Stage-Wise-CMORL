@@ -107,7 +107,9 @@ class Agent(AgentBase):
         norm_state_tensor = self.state_rms.normalize(state_tensor)
         epsilon_tensor = torch.randn(norm_obs_tensor.shape[:-1] + (self.action_dim,), device=self.device)
 
+        #采用高斯噪声进行重采样
         self.actor.updateActionDist(norm_obs_tensor, norm_state_tensor, stage_tensor, epsilon_tensor)
+        # 随机sample带均值还是随机的噪声作为输入
         norm_action_tensor, unnorm_action_tensor = self.actor.sample(deterministic)
         log_prob_tensor = self.actor.getLogProb()
 

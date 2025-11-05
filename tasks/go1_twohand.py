@@ -50,7 +50,7 @@ class Env(VecTask):
 
         """
         raw_obs: 
-            target vel (3), orientation (3), joint pos (12), joint vel (12), prev action (12), command (3)
+            target vel (3), orientation  (3), joint pos (12), joint vel (12), prev action (12), command (3)
         state: 
             linear velocity (3), angular vel (3), com height (1), foot contact (4), 
             gravity (3), friction (1), restitution (1), stage (3)
@@ -128,7 +128,7 @@ class Env(VecTask):
         self.max_episode_length_s = self.cfg["env"]["learn"]["episode_length_s"]
         self.max_episode_length = int(self.max_episode_length_s/self.control_dt + 0.5)
         self.reward_names = self.cfg["env"]["reward_names"]
-        self.cost_names = self.cfg["env"]["cost_names"]
+        self.cost_names = self.cfg["env"]["cost_names"]            
         self.stage_names = self.cfg["env"]["stage_names"]
         self.num_rewards = len(self.reward_names)
         self.num_costs = len(self.cost_names)
@@ -541,6 +541,7 @@ class Env(VecTask):
 
     def step(self, actions: torch.Tensor):
         action_tensor = torch.clamp(actions, -self.clip_actions, self.clip_actions)
+        
         self.pre_physics_step(action_tensor)
 
         # step physics and render each frame
@@ -565,6 +566,7 @@ class Env(VecTask):
             self.gym.refresh_dof_state_tensor(self.sim)
 
         # compute observations, rewards, resets, ...
+        # 在这里更新了物理相关的内容 并且设置了奖励相关的reward
         self.post_physics_step()
         self.obs_dict["obs"] = torch.clamp(self.obs_buf, -self.clip_obs, self.clip_obs).to(self.rl_device)
         if self.num_states > 0:
@@ -618,6 +620,7 @@ class Env(VecTask):
         target_vel_reward = -torch.square(base_lin_vel_x - self.stage_buf[:, 2]*self.target_vels[:, 0])
         target_vel_reward -= torch.square(base_lin_vel_y - self.stage_buf[:, 2]*self.target_vels[:, 1])
         target_vel_reward -= torch.square(base_ang_vel_z - self.stage_buf[:, 2]*self.target_vels[:, 2])
+        # reward的buff部分 
         self.rew_buf[:, 0] = target_vel_reward
         # style
         self.rew_buf[:, 1] =  self.stage_buf[:, 0]*(-torch.square(self.dof_positions - self.default_dof_positions).mean(dim=-1))
